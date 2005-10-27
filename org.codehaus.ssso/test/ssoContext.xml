@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+<beans>
+
+  <!-- Define the ISSOTokenProvider -->
+  <bean id="dominoSSOTokenProvider"
+    class="org.codehaus.ssso.provider.DominoSSOTokenProvider">
+    <constructor-arg type="java.net.URL">
+      <value>http://servername/names.nsf?Login</value>
+    </constructor-arg>
+    <constructor-arg type="java.lang.String">
+      <value>dominoSecret</value>
+    </constructor-arg>
+    <constructor-arg type="java.lang.String">
+      <value>Cp850</value>
+    </constructor-arg>
+  </bean>
+
+  <bean id="allowAllSSOTokenProvider"
+    class="org.codehaus.ssso.provider.AllowAllSSOTokenProvider">
+    <constructor-arg type="java.lang.String">
+      <value>LtpaToken</value>
+    </constructor-arg>
+    <constructor-arg type="java.lang.String">
+      <value>dominoSecret</value>
+    </constructor-arg>
+  </bean>
+
+</beans>

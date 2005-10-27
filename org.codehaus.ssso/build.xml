@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="org.codehaus.ssso" default="main" basedir=".">
+
+    <property environment="env" />
+    <property file="build.properties" />
+
+    <property name="bootclasspath" value="" />
+    <property name="basews" value="${ws}" />
+    <property name="baseos" value="${os}" />
+    <property name="basearch" value="${arch}" />
+    <property name="basenl" value="${nl}" />
+    <property name="javacFailOnError" value="true" />
+    <property name="javacDebugInfo" value="on" />
+    <property name="javacVerbose" value="false" />
+    <property name="javacSource" value="1.3" />
+    <property name="javacTarget" value="1.2" />
+    <property name="compilerArg" value="" />
+
+    <path id="classpath.dependencies">
+        <fileset dir="lib">
+            <include name="*.jar" />
+        </fileset>
+        <fileset dir="vendor/lib">
+            <include name="*.jar" />
+        </fileset>
+        <fileset dir="${dependency.artifacts.dir}">
+            <include name="*.jar" />
+        </fileset>
+        <fileset dir="${artifacts.dir}">
+            <include name="*.jar" />
+        </fileset>
+    </path>
+
+    <path id="classpath.tests">
+        <path refid="classpath.dependencies" />
+    </path>
+
+    <target name="properties" if="eclipse.running">
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter" />
+    </target>
+
+    <target name="init" depends="properties" description="Prepare environment">
+
+        <mkdir dir="${artifacts.dir}" />
+        <mkdir dir="lib" />
+
+        <!-- Stored in ibiblio -->
+        <get src="${remote.javalib}/junit/jars/junit-3.8.1.jar" dest="lib/junit-3.8.1.jar" usetimestamp="true" />
+        <get src="${remote.javalib}/commons-logging/jars/commons-logging-1.0.4.jar" dest="lib/commons-logging-1.0.4.jar" usetimestamp="true" />
+        <get src="${remote.javalib}/mx4j/jars/mx4j-jmx-1.1.1.jar" dest="lib/mx4j-jmx-1.1.1.jar" usetimestamp="true" />
+        <get src="${remote.javalib}/tomcat/jars/catalina-5.0.18.jar" dest="lib/catalina-5.0.18.jar" usetimestamp="true" />
+        <get src="${remote.javalib}/servletapi/jars/servletapi-2.3.jar" dest="lib/servletapi-2.3.jar" usetimestamp="true" />
+        <get src="${remote.javalib}/springframework/jars/spring-1.2.5.jar" dest="lib/spring-1.2.5.jar" usetimestamp="true" />
+
+        <!-- Not yet available from ibiblio -->
+        <copy file="vendor/lib/cryptix-jce-provider.jar" tofile="lib/cryptix-jce-provider.jar" />
+
+    </target>
+
+    <target name="build.jars" depends="init" unless="skip-build" description="Build">
+
+        <mkdir dir="build" />
+        <mkdir dir="build/src" />
+        <mkdir dir="build/test" />
+
+        <delete>
+            <fileset dir="${artifacts.dir}">
+                <include name="${project.name}-${subproject.name}-*.jar" />
+            </fileset>
+            <fileset dir="lib">
+                <include name="ai-*.jar" />
+            </fileset>
+        </delete>
+
+        <javac destdir="build/src" failonerror="${javacFailOnError}" verbose="${javacVerbose}" debug="${javacDebugInfo}" includeAntRuntime="no" bootclasspath="${bootclasspath}" source="${javacSource}" target="${javacTarget}">
+            <compilerarg line="${compilerArg}" />
+            <classpath refid="classpath.dependencies" />
+            <src path="src" />
+        </javac>
+        <copy todir="build/src" failonerror="true">
+            <fileset dir="src" excludes="**/*.java, **/package.htm*" />
+        </copy>
+        <jar jarfile="${artifacts.dir}/${project.name}-${subproject.name}-${version}.jar" basedir="build/src" />
+
+        <propertyfile file="${artifacts.dir}/versions.properties" comment="Current jar versions">
+            <entry key="version.${project.name}-${subproject.name}" value="${version}" />
+        </propertyfile>
+
+        <javac destdir="build/test" failonerror="${javacFailOnError}" verbose="${javacVerbose}" debug="${javacDebugInfo}" includeAntRuntime="no" bootclasspath="${bootclasspath}" source="${javacSource}" target="${javacTarget}">
+            <compilerarg line="${compilerArg}" />
+            <classpath refid="classpath.tests" />
+            <src path="test" />
+        </javac>
+        <copy todir="build/test" failonerror="true">
+            <fileset dir="test" excludes="**/*.java, **/package.htm*" />
+        </copy>
+        <jar jarfile="lib/${project.name}-${subproject.name}-tests-${version}.jar" basedir="build/test" />
+
+        <delete dir="build" />
+
+    </target>
+
+    <target name="junit" depends="build.jars" unless="skip-junit" description="Run tests">
+
+        <mkdir dir="${publishDir}" />
+
+        <!-- Run test suite -->
+        <junit printsummary="yes" haltonfailure="yes" fork="yes">
+            <classpath refid="classpath.tests" />
+            <formatter type="plain" />
+            <test name="${ant.project.name}.junit.AllTests" todir="${publishDir}" />
+        </junit>
+    </target>
+
+    <target name="javadoc" depends="junit" unless="skip-javadoc" description="Create java documentation from java source code.">
+        <!-- You must ensure the javadoc.exe is on your windows path -->
+        <javadoc packagenames="*" destdir="${publishDir}/${project.name}-${subproject.name}/javadoc">
+            <sourcepath>
+                <pathelement location="${basedir}/src" />
+            </sourcepath>
+            <classpath refid="classpath.dependencies" />
+        </javadoc>
+    </target>
+
+    <target name="main" depends="javadoc">
+        <copy todir="${publishDir}/${project.name}-${subproject.name}/" failonerror="true">
+            <fileset dir="${artifacts.dir}">
+                <include name="${project.name}-${subproject.name}-${version}.jar" />
+            </fileset>
+        </copy>
+    </target>
+
+</project>
+
