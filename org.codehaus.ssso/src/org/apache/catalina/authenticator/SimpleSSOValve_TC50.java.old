@@ -22,7 +22,7 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+*/
 package org.apache.catalina.authenticator;
 
 import java.io.IOException;
@@ -33,20 +33,24 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
+import org.codehaus.ssso.provider.ISSOTokenProvider;
+import org.codehaus.ssso.token.ISimpleSSOToken;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.apache.catalina.Context;
+import org.apache.catalina.HttpRequest;
+import org.apache.catalina.HttpResponse;
+import org.apache.catalina.Logger;
+import org.apache.catalina.Manager;
 import org.apache.catalina.Realm;
+import org.apache.catalina.Request;
+import org.apache.catalina.Response;
 import org.apache.catalina.Session;
-import org.apache.catalina.connector.Request;
-import org.apache.catalina.connector.Response;
+import org.apache.catalina.ValveContext;
 import org.apache.catalina.realm.SimpleSSOPrincipal;
 import org.apache.catalina.realm.SimpleSSORealm;
 import org.apache.catalina.valves.ValveBase;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.codehaus.ssso.provider.ISSOTokenProvider;
-import org.codehaus.ssso.provider.ISSOTokenProvider.AuthenticationException;
-import org.codehaus.ssso.token.ISimpleSSOToken;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
  * Interacts with the SimpleSSORealm to ensure ltpatoken cookie creation and
@@ -67,15 +71,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  */
 public class SimpleSSOValve extends ValveBase {
 
-    private final static Log log = LogFactory.getLog(SimpleSSOValve.class);
-
     // **********************
     // Bean fields
     // **********************
     /**
      * Spring bean implementing ISSOTokenProvider
      */
-    protected String ssoTokenCookieName;
+    protected String ssoTokenProviderName;
 
     /**
      * Domain the cookie is valid in.. eg. ".codehaus.org"
@@ -86,6 +88,11 @@ public class SimpleSSOValve extends ValveBase {
      * Encoding used for signin form parameters.
      */
     protected String signinFormEncoding;
+
+    /**
+     * The debugging detail level for this component.
+     */
+    protected int debug = 0;
 
     /**
      * Descriptive information about this Valve implementation.
@@ -118,47 +125,27 @@ public class SimpleSSOValve extends ValveBase {
      * @see org.apache.catalina.Valve#invoke(org.apache.catalina.Request,
      *      org.apache.catalina.Response, org.apache.catalina.ValveContext)
      */
-    public void invoke(Request request, Response response) throws IOException,
-            ServletException {
+    public void invoke(Request request, Response response, ValveContext context)
+            throws IOException, ServletException {
 
-        log.debug("Invoking SimpleSSOValve");
+        if (!(request instanceof HttpRequest)) {
+            log("Skipping non-HTTP request");
+            context.invokeNext(request, response);
+            return;
+        }
 
         Realm _realm = this.getContainer().getRealm();
         if (_realm == null || !(_realm instanceof SimpleSSORealm)) {
-            log
-                    .error("Unable to find Realm or Realm is not an instance of SimpleSSORealm. The SimpleSSOValve will be disabled.");
-            getNext().invoke(request, response);
+            log("Unable to find SimpleSSORealm. This valve will be disabled.");
+            context.invokeNext(request, response);
             return;
         }
         SimpleSSORealm realm = (SimpleSSORealm) _realm;
 
-        if (signinFormEncoding == null) {
-            log
-                    .error("signinFormEncoding property not set. This valve will be disabled.");
-            getNext().invoke(request, response);
-            return;
-        }
-
-        if (ssoTokenDomain == null) {
-            log
-                    .error("ssoTokenDomain property not set. This valve will be disabled.");
-            getNext().invoke(request, response);
-            return;
-        }
-
-        if (ssoTokenCookieName == null) {
-            log
-                    .error("ssoTokenCookieName property not set. This valve will be disabled.");
-            getNext().invoke(request, response);
-            return;
-        }
-
-        if (false) {
-            // TODO. Disable valve if the URI does not match the ssoTokenDomain
-        }
-
         HttpServletRequest sreq = (HttpServletRequest) request.getRequest();
         HttpServletResponse sres = (HttpServletResponse) response.getResponse();
+        HttpRequest hreq = (HttpRequest) request;
+        HttpResponse hres = (HttpResponse) response;
 
         sreq.setCharacterEncoding(signinFormEncoding);
         String requestURI = sreq.getRequestURI();
@@ -169,28 +156,32 @@ public class SimpleSSOValve extends ValveBase {
                 .endsWith(SimpleSSOValve.LOGOUT_ACTION);
 
         // Is this the redirect after successful username/password POST?
-        boolean postAuthentication = matchRequest(request);
+        boolean postAuthentication = matchRequest(hreq);
 
         // Get our SSOTokenProvider
-        ISSOTokenProvider tokenProvider = realm.getSSOTokenProvider();
+        ISSOTokenProvider tokenProvider = (ISSOTokenProvider) ctx
+                .getBean(getSsoTokenProviderName());
 
         // Get our SSO token if we have one
-        Cookie cookie = getSimpleSSOCookie(sreq, getSsoTokenCookieName());
+        Cookie cookie = getSimpleSSOCookie(sreq, tokenProvider
+                .getSingleSignOnCookieName());
         ISimpleSSOToken token = null;
         try {
             if (cookie != null)
                 token = tokenProvider.authenticate(cookie.getValue());
         } catch (Exception e) {
             // Cookie is a bad format
-            log.debug("Token: " + cookie.getValue());
-            log.error("Exception reading token cookie. ", e);
+            log("Exception reading token cookie. " + e.getMessage());
+            if (debug > 1) {
+                log("Token: " + cookie.getValue());
+            }
 
-            getNext().invoke(request, response);
+            context.invokeNext(request, response);
             return;
         }
 
         // Try and find a principal in the session..
-        Session session = request.getSessionInternal(false);
+        Session session = getSession(hreq, false);
         Principal userPrincipal = null;
         if (session != null)
             userPrincipal = session.getPrincipal();
@@ -208,8 +199,8 @@ public class SimpleSSOValve extends ValveBase {
         // Case - User is attempting authentication using the FormAuthenticator
         // Action - Do nothing
         if (loginAction) {
-            log.info("Authentication attempted");
-            getNext().invoke(request, response);
+            log("Authentication attempted");
+            context.invokeNext(request, response);
             return;
         }
 
@@ -217,19 +208,22 @@ public class SimpleSSOValve extends ValveBase {
         // Action - Add the cookie
         if (postAuthentication && principal != null) {
 
-            log.info("Post authentication. Adding token to response for "
+            log("Post authentication. Adding token to response for "
                     + principal.getName());
 
-            // Get a token from the principal
-            token = realm.getSSOTokenProvider().authenticate(
-                    principal.getPassword());
+            // Set cookie
+            tokenProvider.authenticate(principal.getName(), principal
+                    .getPassword());
 
-            addTokenCookie(sres, token, getSsoTokenCookieName(),
+            addTokenCookie(sres, token, getSsoTokenProviderName(),
                     getSsoTokenDomain());
-            log.info("Added ltpatoken to response");
-            log.debug("Token value: " + token.toString());
+            log("Added ltpatoken to response");
 
-            getNext().invoke(request, response);
+            if (debug > 1) {
+                log("Token value: " + token.toString());
+            }
+
+            context.invokeNext(request, response);
             return;
 
         }
@@ -239,19 +233,19 @@ public class SimpleSSOValve extends ValveBase {
         if (principal == null && token != null && token.isExpired() == false) {
 
             // Authenticate and register our new session
-            log.info("Authenticating from token. User "
+            log("Authenticating from token. User "
                     + token.getDistinguishedName());
-            session = request.getSessionInternal(true);
+            session = getSession(hreq, true);
             principal = (SimpleSSOPrincipal) realm.authenticate(token);
 
             if (principal != null) {
-                log.info("Authentication succeeded");
-                register(request, response, principal, Constants.FORM_METHOD,
-                        token.getDistinguishedName(), token.getEncodedToken());
+                log("Authentication succeeded");
+                register(hreq, hres, principal, Constants.FORM_METHOD, token
+                        .getDistinguishedName(), token.getEncodedToken());
             } else
-                log.info("Authentication failed. Token may be invalid");
+                log("Authentication failed. Token may be invalid");
 
-            getNext().invoke(request, response);
+            context.invokeNext(request, response);
             return;
         }
 
@@ -259,14 +253,14 @@ public class SimpleSSOValve extends ValveBase {
         // Action - Logout out the local session as well
         if (principal != null && token == null) {
 
-            log.info("Remote logout was detected");
+            log("Remote logout was detected");
 
             if (session == null)
                 throw new ServletException("Session was null unexpectedly");
             session.expire();
-            log.info("Logged out user " + principal.getName());
+            log("Logged out user " + principal.getName());
 
-            getNext().invoke(request, response);
+            context.invokeNext(request, response);
             return;
         }
 
@@ -275,14 +269,14 @@ public class SimpleSSOValve extends ValveBase {
         // to the /webapp/
         if (principal != null && token != null && logoutAction) {
 
-            log.info("Local logout");
-            expireTokenCookie(sres, getSsoTokenCookieName(),
+            log("Local logout");
+            expireTokenCookie(sres, getSsoTokenProviderName(),
                     getSsoTokenDomain());
 
             if (session == null)
                 throw new ServletException("Session was null unexpectedly");
             session.expire();
-            log.info("Logged out user " + principal.getName());
+            log("Logged out user " + principal.getName());
 
             boolean redirect = true;
             String redirectStr = sreq.getParameter("redirect");
@@ -301,40 +295,42 @@ public class SimpleSSOValve extends ValveBase {
         // Action - Expire the session to force the user to login again.
         if (principal != null && token != null && token.isExpired() == true) {
 
-            log.info("Token has expired. Logging user out "
-                    + principal.getName());
-            expireTokenCookie(sres, getSsoTokenCookieName(),
+            log("Token has expired. Logging user out " + principal.getName());
+            expireTokenCookie(sres, getSsoTokenProviderName(),
                     getSsoTokenDomain());
 
-            log.debug("Creation:" + token.getCreationDate().toGMTString());
-            log.debug("Expiry:" + token.getExpiresDate().toGMTString());
-            log.debug("Now:" + (new Date()).toGMTString());
+            if (debug > 1) {
+                log("Creation:" + token.getCreationDate().toGMTString());
+                log("Expiry:" + token.getExpiresDate().toGMTString());
+                log("Now:" + (new Date()).toGMTString());
+            }
 
             if (session == null)
                 throw new ServletException("Session was null unexpectedly");
             session.expire();
-            log.info("Logged out user " + principal.getName());
+            log("Logged out user " + principal.getName());
 
-            getNext().invoke(request, response);
+            context.invokeNext(request, response);
             return;
 
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Request URI: " + requestURI);
+        if (debug > 1) {
+            log("Request URI: " + requestURI);
             if (principal != null)
-                log.debug("Username: " + principal.getName());
+                log("Username: " + principal.getName());
             else
-                log.debug("No principal");
+                log("No principal");
+
             if (token != null)
-                log.debug("Token: " + token.toString());
+                log("Token: " + token.getDistinguishedName());
             else
-                log.debug("No token");
+                log("No token");
 
         }
 
         // We didn't need to do anything. Invoke the next Valve in our pipeline
-        getNext().invoke(request, response);
+        context.invokeNext(request, response);
         return;
 
     }
@@ -357,6 +353,42 @@ public class SimpleSSOValve extends ValveBase {
 
     public String getInfo() {
         return info;
+    }
+
+    /*
+     * private Session getCatalinaSession(Request request) {
+     * 
+     * Context context = request.getContext(); if (context == null) {
+     * log("Context not found"); return null; }
+     * 
+     * HttpServletRequest hreq = (HttpServletRequest) request.getRequest();
+     * String sessionId = hreq.getRequestedSessionId(); log("Session id: " +
+     * sessionId);
+     * 
+     * Manager manager = context.getManager(); if (sessionId != null && manager !=
+     * null) { Session session; try { session = manager.findSession(sessionId);
+     * if (session == null) log("No session with specified ID"); else log("Found
+     * session"); return session; } catch (IOException e) { log("IOException");
+     * return null; } } else log("Manager or session id not found"); return
+     * null; }
+     */
+
+    /**
+     * Log a message on the Logger associated with our Container (if any).
+     * 
+     * @param message
+     *            Message to be logged
+     */
+    protected void log(String message) {
+
+        if (debug > 0) {
+
+            Logger logger = container.getLogger();
+            if (logger != null)
+                logger.log(this.getInfo() + ": " + message);
+            else
+                System.out.println(this.getInfo() + ": " + message);
+        }
     }
 
     public static Cookie getSimpleSSOCookie(HttpServletRequest hreq,
@@ -399,16 +431,51 @@ public class SimpleSSOValve extends ValveBase {
      */
 
     /**
+     * Return the internal Session that is associated with this HttpRequest,
+     * possibly creating a new one if necessary, or <code>null</code> if there
+     * is no such session and we did not create one.
+     * 
+     * @param request
+     *            The HttpRequest we are processing
+     * @param create
+     *            Should we create a session if needed?
+     */
+    protected Session getSession(HttpRequest request, boolean create) {
+
+        // Changed after copying from Authenticator base
+        Context context = request.getContext();
+        if (context == null) {
+            log("Context not found");
+            return null;
+        }
+
+        HttpServletRequest hreq = (HttpServletRequest) request.getRequest();
+        HttpSession hses = hreq.getSession(create);
+        if (hses == null)
+            return (null);
+        Manager manager = context.getManager();
+        if (manager == null)
+            return (null);
+
+        try {
+            return (manager.findSession(hses.getId()));
+        } catch (IOException e) {
+            return (null);
+        }
+
+    }
+
+    /**
      * Does this request match the saved one (so that it must be the redirect we
      * signalled after successful authentication?
      * 
      * @param request
      *            The request to be verified
      */
-    protected boolean matchRequest(Request request) {
+    protected boolean matchRequest(HttpRequest request) {
 
         // Has a session been created?
-        Session session = request.getSessionInternal(false);
+        Session session = getSession(request, false);
         if (session == null)
             return (false);
 
@@ -423,10 +490,11 @@ public class SimpleSSOValve extends ValveBase {
             return (false);
 
         // Does the request URI match?
-        String requestURI = request.getRequestURI();
+        HttpServletRequest hreq = (HttpServletRequest) request.getRequest();
+        String requestURI = hreq.getRequestURI();
         if (requestURI == null)
             return (false);
-        return (requestURI.equals(request.getRequestURI()));
+        return (requestURI.equals(sreq.getRequestURI()));
 
     }
 
@@ -449,15 +517,19 @@ public class SimpleSSOValve extends ValveBase {
      * @param password
      *            Password used to authenticate (if any)
      */
-    protected void register(Request request, Response response,
+    protected void register(HttpRequest request, HttpResponse response,
             Principal principal, String authType, String username,
             String password) {
+
+        // if (log.isDebugEnabled())
+        log("Authenticated '" + principal.getName() + "' with type '"
+                + authType + "'");
 
         // Cache the authentication information in our request
         request.setAuthType(authType);
         request.setUserPrincipal(principal);
 
-        Session session = request.getSessionInternal(false);
+        Session session = getSession(request, false);
         // Cache the authentication information in our session, if any
         // if (cache) {
         if (true) {
@@ -511,7 +583,7 @@ public class SimpleSSOValve extends ValveBase {
         // above for this request and the user never revisits the context, the
         // SSO entry will never be cleared if we don't associate the session
         if (session == null)
-            session = request.getSessionInternal(true);
+            session = getSession(request, true);
         sso.associate(ssoId, session);
 
     }
@@ -530,12 +602,33 @@ public class SimpleSSOValve extends ValveBase {
         this.signinFormEncoding = signinFormEncoding;
     }
 
-    public String getSsoTokenCookieName() {
-        return ssoTokenCookieName;
+    /**
+     * Return the debugging detail level.
+     */
+    public int getDebug() {
+
+        return (this.debug);
+
     }
 
-    public void setSsoTokenCookieName(String ssoTokenProviderName) {
-        this.ssoTokenCookieName = ssoTokenProviderName;
+    /**
+     * Set the debugging detail level.
+     * 
+     * @param debug
+     *            The new debugging detail level
+     */
+    public void setDebug(int debug) {
+
+        this.debug = debug;
+
+    }
+
+    public String getSsoTokenProviderName() {
+        return ssoTokenProviderName;
+    }
+
+    public void setSsoTokenProviderName(String ssoTokenProviderName) {
+        this.ssoTokenProviderName = ssoTokenProviderName;
     }
 
     public String getSsoTokenDomain() {

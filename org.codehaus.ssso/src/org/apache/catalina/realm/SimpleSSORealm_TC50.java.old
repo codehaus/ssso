@@ -22,7 +22,7 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
+*/
 package org.apache.catalina.realm;
 
 import java.net.MalformedURLException;
@@ -32,23 +32,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.ssso.provider.ISSOTokenProvider;
-import org.codehaus.ssso.provider.ISSOTokenProvider.AuthenticationException;
 import org.codehaus.ssso.token.ISimpleSSOToken;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.apache.catalina.LifecycleException;
-import org.apache.catalina.authenticator.SimpleSSOValve;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.catalina.Logger;
+import org.apache.catalina.authenticator.SingleSignOn;
 
 /**
  * Extends RealmBase to support the use of the lptatoken to authenticate
+ * 
+ * TODO Should we use the JAASRealm instead and implement this as a JAAS
+ * LoginModule? TODO Should we detect for a token being used as a password and
+ * just have one authenticate method, not two? TODO We should add a LDAP
+ * connectionURL. Then we can query for roles once auth succeeds and add them to
+ * the principal.
  * 
  * @author drand
  * 
  */
 public class SimpleSSORealm extends RealmBase {
-
-    private final static Log log = LogFactory.getLog(SimpleSSORealm.class);
 
     // **********************
     // Bean fields
@@ -58,6 +60,11 @@ public class SimpleSSORealm extends RealmBase {
      * Spring bean implementing ISSOTokenProvider
      */
     protected String ssoTokenProviderName;
+
+    /**
+     * Address to form post to
+     */
+    protected String connectionURL;
 
     // **********************
     // End of bean fields
@@ -81,30 +88,35 @@ public class SimpleSSORealm extends RealmBase {
      */
     public Principal authenticate(String username, String password) {
 
-        log
-                .debug("Called SimpleSSORealm authenticate with username and password");
+        if (debug > 1) {
+            log("Called SimpleSSORealm authenticate");
+            log("connectionURL: " + connectionURL);
+            log("username: " + username);
+            log("password: " + password);
+        }
+
+        URL loginURL = null;
+        try {
+            loginURL = new URL(connectionURL);
+        } catch (MalformedURLException e) {
+            log("connectionURL is invalid", e);
+        }
         ISSOTokenProvider tokenProvider = (ISSOTokenProvider) ctx.getBean(this
                 .getSsoTokenProviderName());
 
-        log.debug("username: " + username);
-        log.debug("password: " + password);
+        ISimpleSSOToken token = tokenProvider.authenticate(username, password);
 
-        ISimpleSSOToken token = null;
-
-        try {
-            token = tokenProvider.authenticate(username, password);
-        } catch (AuthenticationException e) {
-            log.info("Authentication failed: ", e);
+        // Check for successful authentication
+        if (token == null)
             return null;
-        }
 
         // Pass to authenticate(
         Principal principal = authenticate(token);
 
         if (principal != null)
-            log.info("Authentication succeeded for " + principal.getName());
+            log("Authentication succeeded for " + principal.getName());
         else
-            log.info("Authentication failed");
+            log("Authentication failed");
 
         return principal;
     }
@@ -116,9 +128,6 @@ public class SimpleSSORealm extends RealmBase {
      * @return
      */
     public Principal authenticate(ISimpleSSOToken token) {
-
-        if (token == null)
-            throw (new IllegalArgumentException());
 
         // Check that a token is valid
         if (token.isValid()) {
@@ -190,6 +199,14 @@ public class SimpleSSORealm extends RealmBase {
 
     }
 
+    public String getConnectionURL() {
+        return connectionURL;
+    }
+
+    public void setConnectionURL(String connectionURL) {
+        this.connectionURL = connectionURL;
+    }
+
     public String getSsoTokenProviderName() {
         return ssoTokenProviderName;
     }
@@ -198,10 +215,31 @@ public class SimpleSSORealm extends RealmBase {
         this.ssoTokenProviderName = ssoTokenProviderName;
     }
 
-    public ISSOTokenProvider getSSOTokenProvider() {
-        ISSOTokenProvider tokenProvider = (ISSOTokenProvider) ctx.getBean(this
-                .getSsoTokenProviderName());
-        return tokenProvider;
+    /**
+     * Log a message on the Logger associated with our Container (if any)
+     * 
+     * @param message
+     *            Message to be logged
+     * @param throwable
+     *            Associated exception
+     */
+    protected void log(String message, Throwable throwable) {
+
+        if (debug > 0) {
+            Logger logger = null;
+            String name = null;
+            if (container != null) {
+                logger = container.getLogger();
+                name = container.getName();
+            }
+
+            if (logger != null) {
+                logger.log(getName() + "[" + name + "]: " + message, throwable);
+            } else {
+                System.out.println(getName() + "[" + name + "]: " + message);
+                throwable.printStackTrace(System.out);
+            }
+        }
     }
 
 }

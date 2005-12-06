@@ -21,11 +21,19 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+ */
 package org.codehaus.ssso.token;
 
 import java.util.Date;
 
+/**
+ * A GenericToken is a simple, insecure token where the secret is the same as
+ * the password. The encoded form simply concats the username and password
+ * together.
+ * 
+ * @author drand
+ * 
+ */
 public class GenericToken implements ISimpleSSOToken {
 
     private String distName;
@@ -43,11 +51,11 @@ public class GenericToken implements ISimpleSSOToken {
 
         if (secret == null)
             throw new IllegalArgumentException();
-        
+
         this.distName = distName;
         this.token = token;
         this.secret = secret;
-        
+
         if (isValid() == false)
             throw new IllegalArgumentException("Token is invalid");
     }
@@ -55,7 +63,7 @@ public class GenericToken implements ISimpleSSOToken {
     public boolean isValid() {
 
         String[] arr = token.split(":");
-        
+
         if (arr.length == 2 && arr[1].equals(secret))
             return true;
         else
@@ -72,6 +80,10 @@ public class GenericToken implements ISimpleSSOToken {
 
     public String getEncodedToken() {
         return token;
+    }
+    
+    public String toString(){
+        return getEncodedToken();
     }
 
     public Date getCreationDate() {

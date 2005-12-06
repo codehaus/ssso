@@ -47,9 +47,12 @@
         <!-- Stored in ibiblio -->
         <get src="${remote.javalib}/junit/jars/junit-3.8.1.jar" dest="lib/junit-3.8.1.jar" usetimestamp="true" />
         <get src="${remote.javalib}/commons-logging/jars/commons-logging-1.0.4.jar" dest="lib/commons-logging-1.0.4.jar" usetimestamp="true" />
+        <get src="${remote.javalib}/commons-codec/jars/commons-codec-1.3.jar" dest="lib/commons-codec-1.3.jar" usetimestamp="true" />
         <get src="${remote.javalib}/mx4j/jars/mx4j-jmx-1.1.1.jar" dest="lib/mx4j-jmx-1.1.1.jar" usetimestamp="true" />
-        <get src="${remote.javalib}/tomcat/jars/catalina-5.0.18.jar" dest="lib/catalina-5.0.18.jar" usetimestamp="true" />
-        <get src="${remote.javalib}/servletapi/jars/servletapi-2.3.jar" dest="lib/servletapi-2.3.jar" usetimestamp="true" />
+        <!--get src="${remote.javalib}/tomcat/jars/catalina-5.0.18.jar" dest="lib/catalina-5.0.18.jar" usetimestamp="true" /-->
+        <!--get src="${remote.javalib}/servletapi/jars/servletapi-2.3.jar" dest="lib/servletapi-2.3.jar" usetimestamp="true" /-->
+        <get src="${remote.javalib}/tomcat/jars/catalina-5.5.9.jar" dest="lib/catalina-5.5.9.jar" usetimestamp="true" />
+        <get src="${remote.javalib}/servletapi/jars/servletapi-2.4.jar" dest="lib/servletapi-2.4.jar" usetimestamp="true" />
         <get src="${remote.javalib}/springframework/jars/spring-1.2.5.jar" dest="lib/spring-1.2.5.jar" usetimestamp="true" />
 
         <!-- Not yet available from ibiblio -->

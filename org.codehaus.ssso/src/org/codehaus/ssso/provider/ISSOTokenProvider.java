@@ -25,7 +25,6 @@
 package org.codehaus.ssso.provider;
 
 import java.io.IOException;
-import java.net.URL;
 
 import org.codehaus.ssso.token.ISimpleSSOToken;
 
@@ -66,7 +65,5 @@ public interface ISSOTokenProvider {
     public abstract ISimpleSSOToken authenticate(String user, String password);
 
     public abstract ISimpleSSOToken authenticate(String tokenString);
-
-    public abstract String getSingleSignOnCookieName();
 
 }

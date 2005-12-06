@@ -35,7 +35,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-import org.apache.catalina.util.Base64;
+import org.apache.commons.codec.binary.Base64;
 
 import cryptix.jce.provider.CryptixCrypto;
 import cryptix.jce.provider.key.RawSecretKey;
@@ -80,13 +80,13 @@ public class WebsphereLtpaToken {
             throw new UnsupportedOperationException();
 
         // base64 decode the DES key
-        byte[] theDESkey = Base64.decode(b64EncodedDESkey.getBytes());
+        byte[] theDESkey = Base64.decodeBase64(b64EncodedDESkey.getBytes());
         RawSecretKey key = new RawSecretKey("DES-EDE3", theDESkey);
 
         // Register our provider
         Provider cryptix = new CryptixCrypto();
 
-        byte ltpa[] = Base64.decode(ltpaToken.getBytes());
+        byte ltpa[] = Base64.decodeBase64(ltpaToken.getBytes());
 
         // Initialize a Cipher with our key
         Cipher cdes1 = Cipher.getInstance("TripleDES");

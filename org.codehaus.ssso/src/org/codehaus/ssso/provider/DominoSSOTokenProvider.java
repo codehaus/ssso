@@ -35,6 +35,9 @@ import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.catalina.authenticator.SimpleSSOValve;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.ssso.token.DominoLtpaToken;
 import org.codehaus.ssso.token.ISimpleSSOToken;
 
@@ -46,10 +49,10 @@ import org.codehaus.ssso.token.ISimpleSSOToken;
  * 
  */
 public class DominoSSOTokenProvider implements ISSOTokenProvider {
+    
+    private final static Log log = LogFactory.getLog(DominoSSOTokenProvider.class);
 
     private static final String ENCODING = "UTF-8";
-
-    private static final String singleSignOnCookieName = "LtpaToken";
 
     // **********************
     // Bean fields
@@ -175,11 +178,6 @@ public class DominoSSOTokenProvider implements ISSOTokenProvider {
         }catch(IllegalArgumentException e){
             throw new AuthenticationException(e);
         }
-    }
-
-    public String getSingleSignOnCookieName() {
-
-        return singleSignOnCookieName;
     }
 
 }

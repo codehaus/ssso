@@ -25,12 +25,18 @@
 */
 package org.codehaus.ssso.token;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.DateFormat;
+import java.util.Properties;
+
+import junit.framework.TestCase;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import junit.framework.TestCase;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
  * Test the DominoLtpaToken class
@@ -48,13 +54,17 @@ public class DominoLtpaTokenTest extends TestCase {
 
     final String CHARSET = "Cp850";
 
-    public DominoLtpaTokenTest() {
+    private ClassPathXmlApplicationContext ctx;
+
+    public DominoLtpaTokenTest() throws IOException {
+        Properties p = new Properties();
+        p.load(ClassLoader.getSystemResourceAsStream("tests.properties"));
+        SECRET = p.getProperty("sampleDominoSecret");
+        LTPA_TOKEN = p.getProperty("sampleDominoToken");
     }
 
     public void testTokenConstructor() {
         
-        fail("TODO. Pull in a test token from a properties file");
-
         // Test the class
         ISimpleSSOToken token = new DominoLtpaToken(LTPA_TOKEN, SECRET, CHARSET);
 
@@ -65,18 +75,21 @@ public class DominoLtpaTokenTest extends TestCase {
 
         assertTrue(token.isValid());
 
+        try{
+            token = new DominoLtpaToken("a", SECRET, CHARSET);
+            fail("Expected IllegalArgumentException");
+        }catch(IllegalArgumentException e){
+            
+        }
+
     }
 
     public void testValidity() {
-        fail("TODO. Pull in a test token from a properties file");
-
         ISimpleSSOToken token = new DominoLtpaToken(LTPA_TOKEN, SECRET, CHARSET);
         assertTrue(token.isValid());
     }
 
     public void testExpired() {
-        fail("TODO. Pull in a test token from a properties file");
-
         ISimpleSSOToken token = new DominoLtpaToken(LTPA_TOKEN, SECRET, CHARSET);
         assertTrue(token.isExpired());
 

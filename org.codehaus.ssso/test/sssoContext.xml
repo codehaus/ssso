@@ -2,27 +2,25 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 <beans>
 
-  <!-- Define the ISSOTokenProvider -->
+  <!-- A token provider that connects to a Domino server via HTTP post for authentication -->
   <bean id="dominoSSOTokenProvider"
     class="org.codehaus.ssso.provider.DominoSSOTokenProvider">
     <constructor-arg type="java.net.URL">
       <value>http://servername/names.nsf?Login</value>
     </constructor-arg>
     <constructor-arg type="java.lang.String">
-      <value>dominoSecret</value>
+      <value>SECRET GOES HERE!!</value>
     </constructor-arg>
     <constructor-arg type="java.lang.String">
       <value>Cp850</value>
     </constructor-arg>
   </bean>
 
-  <bean id="allowAllSSOTokenProvider"
-    class="org.codehaus.ssso.provider.AllowAllSSOTokenProvider">
+  <!--  A token provider that authenticates any user who provides the secret as a password -->
+  <bean id="nullSecuritySSOTokenProvider"
+    class="org.codehaus.ssso.provider.NullSecuritySSOTokenProvider">
     <constructor-arg type="java.lang.String">
-      <value>LtpaToken</value>
-    </constructor-arg>
-    <constructor-arg type="java.lang.String">
-      <value>dominoSecret</value>
+      <value>secret</value>
     </constructor-arg>
   </bean>
 

@@ -35,7 +35,7 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.catalina.util.Base64;
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * Construct with a Base64 encoded LtpaToken and DominoSecret and gain access to
@@ -80,21 +80,22 @@ public class DominoLtpaToken implements ISimpleSSOToken {
         if (secret == null)
             throw new IllegalArgumentException("Secret cannot be null");
 
-        this.dominoSecret = Base64.decode(secret.getBytes());
-        this.ltpa = Base64.decode(ltpaToken.getBytes());
+        this.dominoSecret = Base64.decodeBase64(secret.getBytes());
+        this.ltpa = Base64.decodeBase64(ltpaToken.getBytes());
         this.encodedToken = ltpaToken;
 
         ByteArrayInputStream stream = new ByteArrayInputStream(ltpa);
 
         int usernameLength = ltpa.length - 40;
+        if (usernameLength < 1 || usernameLength > 2000)
+            throw new IllegalArgumentException("Invalid ltpaToken");
+        
         byte header[] = new byte[4];
         byte creation[] = new byte[8];
         byte expires[] = new byte[8];
         byte username[] = new byte[usernameLength];
         sha = new byte[20];
 
-        if (usernameLength < 1 || usernameLength > 2000)
-            throw new IllegalArgumentException("Invalid ltpaToken format");
 
         stream.read(header, 0, 4);
 

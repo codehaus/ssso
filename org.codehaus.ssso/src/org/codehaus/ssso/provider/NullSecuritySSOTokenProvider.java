@@ -22,7 +22,7 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+ */
 package org.codehaus.ssso.provider;
 
 import org.codehaus.ssso.provider.ISSOTokenProvider.AuthenticationException;
@@ -30,14 +30,11 @@ import org.codehaus.ssso.token.DominoLtpaToken;
 import org.codehaus.ssso.token.GenericToken;
 import org.codehaus.ssso.token.ISimpleSSOToken;
 
-public class AllowAllSSOTokenProvider implements ISSOTokenProvider {
-
-    private String cookieName;
+public class NullSecuritySSOTokenProvider implements ISSOTokenProvider {
 
     private String secret;
 
-    public AllowAllSSOTokenProvider(String singleSignOnCookieName, String secret) {
-        this.cookieName = singleSignOnCookieName;
+    public NullSecuritySSOTokenProvider(String secret) {
         this.secret = secret;
     }
 
@@ -62,10 +59,6 @@ public class AllowAllSSOTokenProvider implements ISSOTokenProvider {
             throw new AuthenticationException(e);
         }
 
-    }
-
-    public String getSingleSignOnCookieName() {
-        return cookieName;
     }
 
 }

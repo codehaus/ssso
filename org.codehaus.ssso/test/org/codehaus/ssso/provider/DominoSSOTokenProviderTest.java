@@ -25,10 +25,13 @@
 */
 package org.codehaus.ssso.provider;
 
+import java.io.IOException;
 import java.net.URL;
+import java.util.Properties;
 
 import junit.framework.TestCase;
 
+import org.codehaus.ssso.token.ISimpleSSOToken;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class DominoSSOTokenProviderTest extends TestCase {
@@ -36,34 +39,22 @@ public class DominoSSOTokenProviderTest extends TestCase {
     private ClassPathXmlApplicationContext ctx;
 
     // GenericToken tests
-    final String beanName = "allowAllSSOTokenProvider";
+    final String beanName;
 
-    final String testusername = "Damon Rand";
+    final String testUsername;
 
-    final String testpassword = "secret";
+    final String testPassword;
 
-    final String testtoken = "Damon Rand:secret";
-
-    public DominoSSOTokenProviderTest() {
-        String[] paths = { "ssoContext.xml" };
+    public DominoSSOTokenProviderTest() throws IOException {
+        
+        Properties p = new Properties();
+        p.load(ClassLoader.getSystemResourceAsStream("tests.properties"));
+        beanName = p.getProperty("beanName");
+        testUsername = p.getProperty("testUsername");
+        testPassword = p.getProperty("testPassword");
+        
+        String[] paths = { "sssoContext.xml" };
         ctx = new ClassPathXmlApplicationContext(paths);
-    }
-
-    public void testAlreadyAuthenticated() {
-
-        ISSOTokenProvider tokenProvider = (ISSOTokenProvider) ctx
-                .getBean(beanName);
-
-        // Valid credentials
-        tokenProvider.authenticate(testtoken);
-
-        try {
-            tokenProvider.authenticate(testtoken + "g");
-            fail("Authentication should have failed");
-        } catch (ISSOTokenProvider.AuthenticationException e) {
-            // Expected
-        }
-
     }
 
     public void testAttemptAuthentication() {
@@ -72,16 +63,37 @@ public class DominoSSOTokenProviderTest extends TestCase {
                 .getBean(beanName);
 
         // Valid credentials
-        tokenProvider.authenticate(testusername, testpassword);
-
+        ISimpleSSOToken testToken = tokenProvider.authenticate(testUsername, testPassword);
+        
         // Invalid credentials
         try {
-            tokenProvider.authenticate(testusername, "gibberish");
+            tokenProvider.authenticate(testUsername, "gibberish");
             fail("Authentication should have failed");
         } catch (ISSOTokenProvider.AuthenticationException e) {
             // Expected
         }
 
     }
+    
+    public void testAlreadyAuthenticated() {
+
+        ISSOTokenProvider tokenProvider = (ISSOTokenProvider) ctx
+                .getBean(beanName);
+
+        ISimpleSSOToken testToken = tokenProvider.authenticate(testUsername, testPassword);
+        String testTokenString = testToken.toString();
+        
+        // Valid credentials
+        tokenProvider.authenticate(testTokenString);
+
+        try {
+            tokenProvider.authenticate(testTokenString + "g");
+            fail("Authentication should have failed");
+        } catch (ISSOTokenProvider.AuthenticationException e) {
+            // Expected
+        }
+
+    }
+
 
 }
