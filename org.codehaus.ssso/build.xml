@@ -11,7 +11,7 @@
     <property name="basenl" value="${nl}" />
     <property name="javacFailOnError" value="true" />
     <property name="javacDebugInfo" value="on" />
-    <property name="javacVerbose" value="true" />
+    <property name="javacVerbose" value="false" />
     <property name="javacSource" value="1.3" />
     <property name="javacTarget" value="1.2" />
     <property name="compilerArg" value="" />
@@ -48,15 +48,20 @@
         <get src="${remote.javalib}/junit/jars/junit-3.8.1.jar" dest="lib/junit-3.8.1.jar" usetimestamp="true" />
         <get src="${remote.javalib}/commons-logging/jars/commons-logging-1.0.4.jar" dest="lib/commons-logging-1.0.4.jar" usetimestamp="true" />
         <get src="${remote.javalib}/commons-codec/jars/commons-codec-1.3.jar" dest="lib/commons-codec-1.3.jar" usetimestamp="true" />
-        <get src="${remote.javalib}/mx4j/jars/mx4j-jmx-1.1.1.jar" dest="lib/mx4j-jmx-1.1.1.jar" usetimestamp="true" />
+        <!--get src="${remote.javalib}/mx4j/jars/mx4j-jmx-1.1.1.jar" dest="lib/mx4j-jmx-1.1.1.jar" usetimestamp="true" /-->
         <!--get src="${remote.javalib}/tomcat/jars/catalina-5.0.18.jar" dest="lib/catalina-5.0.18.jar" usetimestamp="true" /-->
         <!--get src="${remote.javalib}/servletapi/jars/servletapi-2.3.jar" dest="lib/servletapi-2.3.jar" usetimestamp="true" /-->
         <get src="${remote.javalib}/tomcat/jars/catalina-5.5.9.jar" dest="lib/catalina-5.5.9.jar" usetimestamp="true" />
         <get src="${remote.javalib}/servletapi/jars/servletapi-2.4.jar" dest="lib/servletapi-2.4.jar" usetimestamp="true" />
         <get src="${remote.javalib}/springframework/jars/spring-1.2.5.jar" dest="lib/spring-1.2.5.jar" usetimestamp="true" />
+        <get src="${remote.javalib}/log4j/jars/log4j-1.2.9.jar" dest="lib/log4j-1.2.9.jar" usetimestamp="true" />
 
         <!-- Not yet available from ibiblio -->
+        <copy file="vendor/lib/atlassian-bucket-2005.12.11.jar" tofile="lib/atlassian-bucket-2005.12.11.jar" />
+        <copy file="vendor/lib/atlassian-user-0.4.9.jar" tofile="lib/atlassian-user-0.4.9.jar" />
         <copy file="vendor/lib/cryptix-jce-provider.jar" tofile="lib/cryptix-jce-provider.jar" />
+        <copy file="vendor/lib/osuser-atl.user.jar" tofile="lib/osuser-atl.user.jar" />
+        <copy file="vendor/lib/seraph-0.7.12.jar" tofile="lib/seraph-0.7.12.jar" />       
 
     </target>
 
