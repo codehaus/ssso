@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.ssso.provider.ISSOTokenProvider;
+import org.codehaus.ssso.provider.SimpleSSOPrincipal;
+//import org.codehaus.ssso.provider.SimpleSSOPrincipal;
 import org.codehaus.ssso.provider.ISSOTokenProvider.AuthenticationException;
 import org.codehaus.ssso.token.ISimpleSSOToken;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -127,8 +129,8 @@ public class SimpleSSORealm extends RealmBase {
             List roles = new ArrayList();
             roles.add(new String("user")); // Hardcoded for Anthill
 
-            SimpleSSOPrincipal principal = new SimpleSSOPrincipal(this, token
-                    .getDistinguishedName(), token.getEncodedToken(), roles);
+            SimpleSSOPrincipal principal = new SimpleSSOPrincipal(token
+                    .getDistinguishedName(), token.getEncodedToken(), roles, token.getUsername(), token.getEmail());
 
             return principal;
         } else

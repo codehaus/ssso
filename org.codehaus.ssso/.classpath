@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="src2"/>
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/cryptix-jce-provider.jar"/>
@@ -10,8 +11,9 @@
 	<classpathentry kind="lib" path="lib/catalina-5.5.9.jar"/>
 	<classpathentry kind="lib" path="lib/commons-codec-1.3.jar"/>
 	<classpathentry kind="lib" path="lib/servletapi-2.4.jar"/>
-	<classpathentry kind="lib" path="lib/seraph-0.7.12.jar"/>
-	<classpathentry kind="lib" path="lib/osuser-1.0-dev-6May05.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.8.jar"/>
+	<classpathentry kind="lib" path="lib/seraph-0.7.12.jar"/>
+	<classpathentry kind="lib" path="lib/atlassian-user-0.4.9.jar"/>
+	<classpathentry kind="lib" path="lib/atlassian-bucket-2005.12.11.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

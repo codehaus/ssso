@@ -29,6 +29,7 @@
 
 package com.atlassian.seraph.auth;
 
+
 import java.security.Principal;
 import java.util.Iterator;
 import java.util.List;
@@ -39,31 +40,38 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.ssso.ISimpleSSOPrincipal;
+import org.codehaus.ssso.provider.SimpleSSOPrincipal;
+
+import bucket.container.ContainerManager;
 
 import com.atlassian.seraph.config.SecurityConfig;
 import com.atlassian.seraph.interceptor.LogoutInterceptor;
-import com.opensymphony.user.EntityNotFoundException;
-import com.opensymphony.user.User;
-import com.opensymphony.user.UserManager;
+import com.atlassian.user.EntityException;
+import com.atlassian.user.User;
+import com.atlassian.user.UserManager;
 
 /**
  * @author drand
  * 
  */
-public class ConfluenceSimpleSSOAuthenticator extends DefaultAuthenticator {
+public class SimpleSSOAuthenticator extends DefaultAuthenticator {
     private static final Log log = LogFactory
-            .getLog(ConfluenceSimpleSSOAuthenticator.class);
+            .getLog(SimpleSSOAuthenticator.class);
 
-    protected String _cas_login_url;
+    protected String _sso_login_url;
 
-    protected String _cas_logout_url;
+    protected String _sso_logout_url;
 
     private SecurityConfig secConfig;
 
     public void init(Map params, SecurityConfig config) {
         super.init(params, config);
-        _cas_login_url = config.getLoginURL();
-        _cas_logout_url = config.getLogoutURL();
+
+        log.info("** Called init");
+
+        _sso_login_url = config.getLoginURL();
+        _sso_logout_url = config.getLogoutURL();
 
         this.secConfig = config;
 
@@ -76,40 +84,77 @@ public class ConfluenceSimpleSSOAuthenticator extends DefaultAuthenticator {
     public Principal getUser(HttpServletRequest request,
             HttpServletResponse response) {
 
-        // User has already signed in so Container will have a principal
-        Principal containerPrincipal = request.getUserPrincipal();
-        if (containerPrincipal == null) {
-            log.info("No principal");
-                    return null;
-        }
+        try {
 
-        // This will be a distinguished name
-        String user1 = request.getRemoteUser();
-        String us = containerPrincipal.getName();
-        us = "Damon Rand";
-        log.info("getRemoteUser: " + user1);
-        log.info("getUserPrincipal: " + containerPrincipal.toString());
-        
-        if (us != null) {
-            log.debug("Container user:" + us);
+            log.debug("** Called getUser");
 
-            User user = null;
-
-            try {
-                user = UserManager.getInstance().getUser(us);
-            } catch (EntityNotFoundException e) {
-                log.error("Could not find user: " + us);
+            // User has already signed in so Container will have a principal
+            Principal containerPrincipal = request.getUserPrincipal();
+            if (containerPrincipal == null) {
+                log.info("No principal");
+                return null;
             }
 
-            return user;
+            /*
+             * if (!(containerPrincipal instanceof ISimpleSSOPrincipal)) { log
+             * .info("You have not configured your container properly for
+             * SimpleSSO: " + containerPrincipal.getClass()
+             * .getCanonicalName()); return null; }
+             */
 
-        } else {
-            return super.getUser(request, response);
+            ISimpleSSOPrincipal principal = null;
+            try {
+                principal = (ISimpleSSOPrincipal) containerPrincipal;
+            } finally {
+                log
+                        .error("You have not configured your container properly for SimpleSSO: "
+                                + containerPrincipal.getClass()
+                                        .getCanonicalName());
+            }
+
+            String username = principal.getUsername();
+
+            log.debug("getUserPrincipal: " + containerPrincipal.toString());
+
+            if (username != null) {
+                log.debug("Container user:" + username);
+
+                User user = null;
+
+                try {
+                    UserManager userManager = (UserManager) ContainerManager
+                            .getComponent("userManager");
+
+                    user = userManager.getUser(username.toLowerCase());
+                } catch (EntityException e) {
+                    log.error("Call to getUser failed: " + username, e);
+                }
+
+                // Required by Confluence
+                request.getSession().setAttribute(LOGGED_IN_KEY, user);
+                request.getSession().setAttribute(LOGGED_OUT_KEY, null);
+
+                log.debug("UserManager user: " + user.toString());
+
+                return user;
+
+            } else {
+
+                log.debug("Calling super: ");
+                return super.getUser(request, response);
+            }
+
+        } catch (RuntimeException e) {
+            log.info(e);
+            throw new RuntimeException(e);
         }
+
     }
 
     public boolean login(HttpServletRequest request,
             HttpServletResponse response, String username, String password) {
+
+        log.info("** Called login");
 
         boolean loginSuccess = false;
 
@@ -125,6 +170,8 @@ public class ConfluenceSimpleSSOAuthenticator extends DefaultAuthenticator {
     public boolean login(HttpServletRequest request,
             HttpServletResponse response, String username, String password,
             boolean cookie) throws AuthenticatorException {
+
+        log.info("** Called login2");
 
         // User has already signed in so Container will have a principal
         Principal containerPrincipal = request.getUserPrincipal();
@@ -155,7 +202,11 @@ public class ConfluenceSimpleSSOAuthenticator extends DefaultAuthenticator {
         }
 
         // kill local session
-        // Set the SimpleSSO session cookie to null.
+        // Redirect to logout location.
+
+        // Tell confluence we logged out
+        request.getSession().setAttribute(LOGGED_IN_KEY, null);
+        request.getSession().setAttribute(LOGGED_OUT_KEY, Boolean.TRUE);
 
         for (Iterator iterator = interceptors.iterator(); iterator.hasNext();) {
             LogoutInterceptor interceptor = (LogoutInterceptor) iterator.next();

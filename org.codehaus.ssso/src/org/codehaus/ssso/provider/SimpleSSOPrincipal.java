@@ -22,36 +22,55 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-package org.apache.catalina.realm;
+ */
+package org.codehaus.ssso.provider;
 
+
+import java.security.Principal;
 import java.util.List;
 
-import org.apache.catalina.Realm;
+import org.codehaus.ssso.ISimpleSSOPrincipal;
 
 /**
  * Eventually we will extend this to handle Domino roles.
  * 
- * TODO Add role support. 
+ * TODO Add role support.
  * 
  * @author drand
- *  
+ * 
  */
-public class SimpleSSOPrincipal extends GenericPrincipal {
+public class SimpleSSOPrincipal extends GenericPrincipal implements
+        ISimpleSSOPrincipal {
 
     private String dn;
 
-    public SimpleSSOPrincipal(Realm realm, String distinguishedName, String password) {
-        super(realm, distinguishedName, password);
+    private String username;
+
+    private String email;
+
+    public SimpleSSOPrincipal(String distinguishedName, String password) {
+        super(distinguishedName, password);
     }
 
-    public SimpleSSOPrincipal(Realm realm, String distinguishedName, String password,
+    public SimpleSSOPrincipal(String distinguishedName, String password,
             List roles) {
-        super(realm, distinguishedName, password, roles);
+        super(distinguishedName, password, roles);
     }
 
-    public SimpleSSOPrincipal(String distinguishedName, String password, List roles) {
+    public SimpleSSOPrincipal(String distinguishedName, String password,
+            List roles, String username, String email) {
+
         super(distinguishedName, password, roles);
+        this.username = username;
+        this.email = email;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
 }

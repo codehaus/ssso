@@ -21,23 +21,75 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+ */
 package org.codehaus.ssso.token;
 
 import java.util.Date;
 
+/**
+ * A new SSO system will implement this interface to describe a user token
+ * 
+ * @author drand
+ * 
+ */
 public interface ISimpleSSOToken {
 
+    /**
+     * The token is been correctly formatted
+     * 
+     * @return
+     */
     public boolean isValid();
 
+    /**
+     * Are we still in the time period specified by the token?
+     * 
+     * @return
+     */
     public boolean isExpired();
 
+    /**
+     * The fully qualified name of the user represented by the token
+     * 
+     * @return
+     */
     public String getDistinguishedName();
 
+    /**
+     * A string version of the token that can be passed between applications.
+     * For example in a cookie.
+     * 
+     * @return
+     */
     public String getEncodedToken();
 
+    /**
+     * The date this token was created
+     * 
+     * @return
+     */
     public Date getCreationDate();
-    
+
+    /**
+     * The date this token is valid until
+     * 
+     * @return
+     */
     public Date getExpiresDate();
+
+    /**
+     * May be null. The name the user typed to login. This will often be
+     * different from the distinguishedName.
+     * 
+     * @return
+     */
+    public String getUsername();
+
+    /**
+     * May be null. The email address of the user.
+     * 
+     * @return
+     */
+    public String getEmail();
 
 }

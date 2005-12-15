@@ -22,7 +22,7 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+ */
 package org.codehaus.ssso.token;
 
 import java.io.File;
@@ -48,23 +48,26 @@ public class DominoLtpaTokenTest extends TestCase {
 
     public static Log log = LogFactory.getLog(DominoLtpaTokenTest.class);
 
-    String SECRET;
+    private ClassPathXmlApplicationContext ctx;
 
-    String LTPA_TOKEN;
+    private String SECRET;
+
+    private String LTPA_TOKEN;
 
     final String CHARSET = "Cp850";
 
-    private ClassPathXmlApplicationContext ctx;
+    private String LTPA_TOKEN_USERNAME;
 
     public DominoLtpaTokenTest() throws IOException {
         Properties p = new Properties();
         p.load(ClassLoader.getSystemResourceAsStream("tests.properties"));
         SECRET = p.getProperty("sampleDominoSecret");
         LTPA_TOKEN = p.getProperty("sampleDominoToken");
+        LTPA_TOKEN_USERNAME = p.getProperty("sampleDominoTokenUsername");
     }
 
     public void testTokenConstructor() {
-        
+
         // Test the class
         ISimpleSSOToken token = new DominoLtpaToken(LTPA_TOKEN, SECRET, CHARSET);
 
@@ -75,12 +78,18 @@ public class DominoLtpaTokenTest extends TestCase {
 
         assertTrue(token.isValid());
 
-        try{
+        try {
             token = new DominoLtpaToken("a", SECRET, CHARSET);
             fail("Expected IllegalArgumentException");
-        }catch(IllegalArgumentException e){
-            
+        } catch (IllegalArgumentException e) {
+
         }
+
+    }
+
+    public void testUsername() {
+        ISimpleSSOToken token = new DominoLtpaToken(LTPA_TOKEN, SECRET, CHARSET);
+        assertEquals(token.getUsername(), LTPA_TOKEN_USERNAME);
 
     }
 

@@ -22,7 +22,7 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+ */
 package org.codehaus.ssso.token;
 
 import java.io.ByteArrayInputStream;
@@ -47,7 +47,7 @@ import org.apache.commons.codec.binary.Base64;
  * from the token header.
  * 
  * @author drand
- *  
+ * 
  */
 public class DominoLtpaToken implements ISimpleSSOToken {
     private Date creationDate;
@@ -69,11 +69,11 @@ public class DominoLtpaToken implements ISimpleSSOToken {
     private byte[] digest;
 
     /**
-     *  
+     * 
      */
     public DominoLtpaToken(String ltpaToken, String secret, String charset) {
         super();
-        
+
         if (ltpaToken == null)
             throw new IllegalArgumentException("Token cannot be null");
 
@@ -89,13 +89,12 @@ public class DominoLtpaToken implements ISimpleSSOToken {
         int usernameLength = ltpa.length - 40;
         if (usernameLength < 1 || usernameLength > 2000)
             throw new IllegalArgumentException("Invalid ltpaToken");
-        
+
         byte header[] = new byte[4];
         byte creation[] = new byte[8];
         byte expires[] = new byte[8];
         byte username[] = new byte[usernameLength];
         sha = new byte[20];
-
 
         stream.read(header, 0, 4);
 
@@ -145,7 +144,7 @@ public class DominoLtpaToken implements ISimpleSSOToken {
         digest = md.digest(ostream.toByteArray());
 
         valid = MessageDigest.isEqual(digest, sha);
-        
+
         if (!valid)
             throw new IllegalArgumentException(
                     "Token was not valid. Did you use the correct domino secret?");
@@ -168,14 +167,9 @@ public class DominoLtpaToken implements ISimpleSSOToken {
         return encodedToken;
     }
 
-    /*
-     * TODO We want to be able to get a short display name from the canonical
-     * name
-     *  
-     */
-    private String getUsername() {
+    public String getUsername() {
 
-        Pattern p = Pattern.compile("CN=(.*)/.*");
+        Pattern p = Pattern.compile("CN=([^/.]*).*");
         Matcher m = p.matcher(distinguishedName);
         String username = null;
         if (m.matches() == true) {
@@ -202,6 +196,11 @@ public class DominoLtpaToken implements ISimpleSSOToken {
      */
     public boolean isExpired() {
         return expiresDate.before(new Date());
+    }
+
+    public String getEmail() {
+        // Not available from the Domino token
+        return null;
     }
 
 }

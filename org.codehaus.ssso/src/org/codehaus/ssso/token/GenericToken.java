@@ -94,4 +94,14 @@ public class GenericToken implements ISimpleSSOToken {
         return new Date("1/1/2025");
     }
 
+    public String getUsername() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public String getEmail() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }
