@@ -11,7 +11,7 @@
     <property name="basenl" value="${nl}" />
     <property name="javacFailOnError" value="true" />
     <property name="javacDebugInfo" value="on" />
-    <property name="javacVerbose" value="false" />
+    <property name="javacVerbose" value="true" />
     <property name="javacSource" value="1.3" />
     <property name="javacTarget" value="1.2" />
     <property name="compilerArg" value="" />
@@ -60,34 +60,48 @@
 
     </target>
 
-    <target name="build.jars" depends="init" unless="skip-build" description="Build">
+    <target name="build.subproject">
 
-        <mkdir dir="build" />
-        <mkdir dir="build/src" />
-        <mkdir dir="build/test" />
-
-        <delete>
-            <fileset dir="${artifacts.dir}">
-                <include name="${project.name}-${subproject.name}-*.jar" />
-            </fileset>
-            <fileset dir="lib">
-                <include name="ai-*.jar" />
-            </fileset>
-        </delete>
-
-        <javac destdir="build/src" failonerror="${javacFailOnError}" verbose="${javacVerbose}" debug="${javacDebugInfo}" includeAntRuntime="no" bootclasspath="${bootclasspath}" source="${javacSource}" target="${javacTarget}">
+        <javac destdir="build/src-${subproject.name}" failonerror="${javacFailOnError}" verbose="${javacVerbose}" debug="${javacDebugInfo}" includeAntRuntime="no" bootclasspath="${bootclasspath}" source="${javacSource}" target="${javacTarget}">
             <compilerarg line="${compilerArg}" />
             <classpath refid="classpath.dependencies" />
-            <src path="src" />
+            <src path="src/${subproject.name}" />
         </javac>
-        <copy todir="build/src" failonerror="true">
-            <fileset dir="src" excludes="**/*.java, **/package.htm*" />
+        <copy todir="build/src-${subproject.name}" failonerror="true">
+            <fileset dir="src/${subproject.name}" excludes="**/*.java, **/package.htm*" />
         </copy>
-        <jar jarfile="${artifacts.dir}/${project.name}-${subproject.name}-${version}.jar" basedir="build/src" />
+        <jar jarfile="${artifacts.dir}/${project.name}-${subproject.name}-${version}.jar" basedir="build/src-${subproject.name}" />
 
         <propertyfile file="${artifacts.dir}/versions.properties" comment="Current jar versions">
             <entry key="version.${project.name}-${subproject.name}" value="${version}" />
         </propertyfile>
+
+    </target>
+
+    <target name="build.jars" depends="init" unless="skip-build" description="Build">
+
+        <delete dir="build" />
+        <mkdir dir="build" />
+        <mkdir dir="build/src-common" />
+        <mkdir dir="build/src-core" />
+        <mkdir dir="build/test" />
+
+        <delete>
+            <fileset dir="${artifacts.dir}">
+                <include name="${project.name}-*.jar" />
+            </fileset>
+            <fileset dir="lib">
+                <include name="*-tests.jar" />
+            </fileset>
+        </delete>
+
+        <antcall target="build.subproject">
+            <param name="subproject.name" value="common" />
+        </antcall>
+
+        <antcall target="build.subproject">
+            <param name="subproject.name" value="core" />
+        </antcall>
 
         <javac destdir="build/test" failonerror="${javacFailOnError}" verbose="${javacVerbose}" debug="${javacDebugInfo}" includeAntRuntime="no" bootclasspath="${bootclasspath}" source="${javacSource}" target="${javacTarget}">
             <compilerarg line="${compilerArg}" />
@@ -97,7 +111,7 @@
         <copy todir="build/test" failonerror="true">
             <fileset dir="test" excludes="**/*.java, **/package.htm*" />
         </copy>
-        <jar jarfile="lib/${project.name}-${subproject.name}-tests-${version}.jar" basedir="build/test" />
+        <jar jarfile="lib/${project.name}-tests-${version}.jar" basedir="build/test" />
 
         <delete dir="build" />
 
