@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.codehaus.ssso.provider;
+package org.codehaus.ssso;
 
 import java.security.Principal;
 import java.util.Arrays;

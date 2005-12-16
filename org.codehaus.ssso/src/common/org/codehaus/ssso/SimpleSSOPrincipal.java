@@ -23,13 +23,12 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.codehaus.ssso.provider;
+package org.codehaus.ssso;
 
 
 import java.security.Principal;
 import java.util.List;
 
-import org.codehaus.ssso.ISimpleSSOPrincipal;
 
 /**
  * Eventually we will extend this to handle Domino roles.

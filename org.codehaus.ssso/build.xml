@@ -136,18 +136,21 @@
 
     <target name="javadoc" depends="junit" unless="skip-javadoc" description="Create java documentation from java source code.">
         <!-- You must ensure the javadoc.exe is on your windows path -->
-        <javadoc packagenames="*" destdir="${publishDir}/${project.name}-${subproject.name}/javadoc">
+        <javadoc packagenames="*" destdir="${publishDir}/javadoc">
             <sourcepath>
-                <pathelement location="${basedir}/src" />
+                <pathelement location="${basedir}/src/common" />
+            </sourcepath>
+            <sourcepath>
+                <pathelement location="${basedir}/src/core" />
             </sourcepath>
             <classpath refid="classpath.dependencies" />
         </javadoc>
     </target>
 
     <target name="main" depends="javadoc">
-        <copy todir="${publishDir}/${project.name}-${subproject.name}/" failonerror="true">
+        <copy todir="${publishDir}/" failonerror="true">
             <fileset dir="${artifacts.dir}">
-                <include name="${project.name}-${subproject.name}-${version}.jar" />
+                <include name="${project.name}-*-${version}.jar" />
             </fileset>
         </copy>
     </target>
