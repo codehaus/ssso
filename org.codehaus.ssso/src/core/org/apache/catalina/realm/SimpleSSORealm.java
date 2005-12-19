@@ -31,8 +31,8 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codehaus.ssso.SimpleSSOPrincipal;
 import org.codehaus.ssso.provider.ISSOTokenProvider;
-import org.codehaus.ssso.provider.SimpleSSOPrincipal;
 //import org.codehaus.ssso.provider.SimpleSSOPrincipal;
 import org.codehaus.ssso.provider.ISSOTokenProvider.AuthenticationException;
 import org.codehaus.ssso.token.ISimpleSSOToken;

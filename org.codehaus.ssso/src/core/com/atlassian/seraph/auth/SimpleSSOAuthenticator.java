@@ -29,7 +29,6 @@
 
 package com.atlassian.seraph.auth;
 
-
 import java.security.Principal;
 import java.util.Iterator;
 import java.util.List;
@@ -41,21 +40,25 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.ssso.ISimpleSSOPrincipal;
-import org.codehaus.ssso.provider.SimpleSSOPrincipal;
+import org.codehaus.ssso.SimpleSSOPrincipal;
 
 import bucket.container.ContainerManager;
 
 import com.atlassian.seraph.config.SecurityConfig;
 import com.atlassian.seraph.interceptor.LogoutInterceptor;
+import com.atlassian.seraph.util.CookieUtils;
 import com.atlassian.user.EntityException;
 import com.atlassian.user.User;
 import com.atlassian.user.UserManager;
 
 /**
+ * 
+ * 
  * @author drand
  * 
  */
 public class SimpleSSOAuthenticator extends DefaultAuthenticator {
+
     private static final Log log = LogFactory
             .getLog(SimpleSSOAuthenticator.class);
 
@@ -77,91 +80,22 @@ public class SimpleSSOAuthenticator extends DefaultAuthenticator {
 
     }
 
-    /**
-     * @return com.opensymphony.user.User
-     * 
-     */
     public Principal getUser(HttpServletRequest request,
             HttpServletResponse response) {
 
-        try {
-
-            log.debug("** Called getUser");
-
-            // User has already signed in so Container will have a principal
-            Principal containerPrincipal = request.getUserPrincipal();
-            if (containerPrincipal == null) {
-                log.info("No principal");
-                return null;
-            }
-
-            /*
-             * if (!(containerPrincipal instanceof ISimpleSSOPrincipal)) { log
-             * .info("You have not configured your container properly for
-             * SimpleSSO: " + containerPrincipal.getClass()
-             * .getCanonicalName()); return null; }
-             */
-
-            ISimpleSSOPrincipal principal = null;
-            try {
-                principal = (ISimpleSSOPrincipal) containerPrincipal;
-            } finally {
-                log
-                        .error("You have not configured your container properly for SimpleSSO: "
-                                + containerPrincipal.getClass()
-                                        .getCanonicalName());
-            }
-
-            String username = principal.getUsername();
-
-            log.debug("getUserPrincipal: " + containerPrincipal.toString());
-
-            if (username != null) {
-                log.debug("Container user:" + username);
-
-                User user = null;
-
-                try {
-                    UserManager userManager = (UserManager) ContainerManager
-                            .getComponent("userManager");
-
-                    user = userManager.getUser(username.toLowerCase());
-                } catch (EntityException e) {
-                    log.error("Call to getUser failed: " + username, e);
-                }
-
-                // Required by Confluence
-                request.getSession().setAttribute(LOGGED_IN_KEY, user);
-                request.getSession().setAttribute(LOGGED_OUT_KEY, null);
-
-                log.debug("UserManager user: " + user.toString());
-
-                return user;
-
-            } else {
-
-                log.debug("Calling super: ");
-                return super.getUser(request, response);
-            }
-
-        } catch (RuntimeException e) {
-            log.info(e);
-            throw new RuntimeException(e);
-        }
+        return super.getUser(request, response);
 
     }
 
     public boolean login(HttpServletRequest request,
             HttpServletResponse response, String username, String password) {
 
-        log.info("** Called login");
-
         boolean loginSuccess = false;
 
         try {
             loginSuccess = login(request, response, username, password, false);
         } catch (AuthenticatorException e) {
-            log.error("Problem loggin in: ", e);
+            log.error("Problem logging in: ", e);
             return loginSuccess;
         }
         return loginSuccess;
@@ -171,20 +105,55 @@ public class SimpleSSOAuthenticator extends DefaultAuthenticator {
             HttpServletResponse response, String username, String password,
             boolean cookie) throws AuthenticatorException {
 
-        log.info("** Called login2");
-
-        // User has already signed in so Container will have a principal
-        Principal containerPrincipal = request.getUserPrincipal();
-
-        // This will be a distinguished name
-        String us = containerPrincipal.getName();
-        us = "Damon Rand";
-
-        log.info("Called login:" + username + " - " + us);
-
-        if (us != null) {
+        if (request.getSession().getAttribute(LOGGED_IN_KEY) != null
+                && request.getSession().getAttribute(LOGGED_OUT_KEY) == null) {
+            log.debug("Already logged in");
             return true;
+        }
+
+        // The SimpleSSOFilter should have provided access to the Container
+        // principal
+        ISimpleSSOPrincipal principal = (ISimpleSSOPrincipal) request
+                .getAttribute(ISimpleSSOPrincipal.class.getCanonicalName());
+
+        if (principal != null) {
+            log
+                    .debug("Found a ISimpleSSOPrincipal: "
+                            + principal.getUsername());
+
+            // See if the principal maps to a Confluence user
+            UserManager userManager = (UserManager) ContainerManager
+                    .getComponent("userManager");
+            User user = null;
+            try {
+                user = userManager.getUser(principal.getUsername()
+                        .toLowerCase());
+
+                // TODO. We should compare email addresses to be sure we have
+                // mapped to the right person. Or store the password in the
+                // principal??
+
+            } catch (EntityException e) {
+                log.debug("getUser threw an exception: ", e);
+            }
+
+            if (user != null)
+                log.debug("Found a user: " + user.getEmail());
+
+            if (getRoleMapper().canLogin(user, request)) {
+                log.debug("User can login");
+
+                request.getSession().setAttribute(LOGGED_IN_KEY, user);
+                request.getSession().setAttribute(LOGGED_OUT_KEY, null);
+                return true;
+            }
+
+            log.debug("Attempting standard confluence login");
+            return super.login(request, response, username, password, cookie);
+
         } else {
+            // TODO. This doesn't work for some reason. Why not?
+            log.debug("Attempting standard confluence login");
             return super.login(request, response, username, password, cookie);
         }
     }
@@ -203,6 +172,7 @@ public class SimpleSSOAuthenticator extends DefaultAuthenticator {
 
         // kill local session
         // Redirect to logout location.
+        // response.sendRedirect();
 
         // Tell confluence we logged out
         request.getSession().setAttribute(LOGGED_IN_KEY, null);
