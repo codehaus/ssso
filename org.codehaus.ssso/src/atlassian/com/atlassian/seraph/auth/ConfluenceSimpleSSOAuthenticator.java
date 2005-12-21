@@ -42,6 +42,7 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.ssso.ISimpleSSOPrincipal;
 
 import bucket.container.ContainerManager;
+import bucket.user.UserAccessor;
 
 import com.atlassian.seraph.config.SecurityConfig;
 import com.atlassian.seraph.interceptor.LogoutInterceptor;
@@ -49,18 +50,18 @@ import com.atlassian.user.EntityException;
 import com.atlassian.user.Group;
 import com.atlassian.user.GroupManager;
 import com.atlassian.user.User;
-import com.atlassian.user.UserManager;
 
 /**
- * 
+ * Logs in a user from the ISimpleSSOPrincipal in the container. If the user is
+ * not in confluence-users group then they are added.
  * 
  * @author drand
  * 
  */
-public class SimpleSSOAuthenticator extends DefaultAuthenticator {
+public class ConfluenceSimpleSSOAuthenticator extends DefaultAuthenticator {
 
     private static final Log log = LogFactory
-            .getLog(SimpleSSOAuthenticator.class);
+            .getLog(ConfluenceSimpleSSOAuthenticator.class);
 
     protected String _sso_login_url;
 
@@ -122,8 +123,8 @@ public class SimpleSSOAuthenticator extends DefaultAuthenticator {
                             + principal.getUsername());
 
             // See if the principal maps to a Confluence user
-            UserManager userManager = (UserManager) ContainerManager
-                    .getComponent("userManager");
+            UserAccessor userManager = (UserAccessor) ContainerManager
+                    .getComponent("userAccessor");
             User user = null;
             try {
                 user = userManager.getUser(principal.getUsername()
