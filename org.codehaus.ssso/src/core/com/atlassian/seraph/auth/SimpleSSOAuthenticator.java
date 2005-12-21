@@ -40,14 +40,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.ssso.ISimpleSSOPrincipal;
-import org.codehaus.ssso.SimpleSSOPrincipal;
 
 import bucket.container.ContainerManager;
 
 import com.atlassian.seraph.config.SecurityConfig;
 import com.atlassian.seraph.interceptor.LogoutInterceptor;
-import com.atlassian.seraph.util.CookieUtils;
 import com.atlassian.user.EntityException;
+import com.atlassian.user.Group;
+import com.atlassian.user.GroupManager;
 import com.atlassian.user.User;
 import com.atlassian.user.UserManager;
 
@@ -128,6 +128,16 @@ public class SimpleSSOAuthenticator extends DefaultAuthenticator {
             try {
                 user = userManager.getUser(principal.getUsername()
                         .toLowerCase());
+
+                GroupManager groupManager = (GroupManager) ContainerManager
+                        .getComponent("groupManager");
+
+                Group group = groupManager.getGroup("confluence-users");
+                if (!groupManager.hasMembership(group, user)) {
+                    log.debug("Adding user to confluence-users: "
+                            + user.getName());
+                    groupManager.addMembership(group, user);
+                }
 
                 // TODO. We should compare email addresses to be sure we have
                 // mapped to the right person. Or store the password in the

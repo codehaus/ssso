@@ -61,7 +61,7 @@
         <copy file="vendor/lib/atlassian-user-0.4.9.jar" tofile="lib/atlassian-user-0.4.9.jar" />
         <copy file="vendor/lib/cryptix-jce-provider.jar" tofile="lib/cryptix-jce-provider.jar" />
         <copy file="vendor/lib/osuser-atl.user.jar" tofile="lib/osuser-atl.user.jar" />
-        <copy file="vendor/lib/seraph-0.7.12.jar" tofile="lib/seraph-0.7.12.jar" />       
+        <copy file="vendor/lib/seraph-0.7.12.jar" tofile="lib/seraph-0.7.12.jar" />
 
     </target>
 
@@ -89,6 +89,7 @@
         <mkdir dir="build" />
         <mkdir dir="build/src-common" />
         <mkdir dir="build/src-core" />
+        <mkdir dir="build/src-tomcat" />
         <mkdir dir="build/test" />
 
         <delete>
@@ -106,6 +107,10 @@
 
         <antcall target="build.subproject">
             <param name="subproject.name" value="core" />
+        </antcall>
+
+        <antcall target="build.subproject">
+            <param name="subproject.name" value="tomcat" />
         </antcall>
 
         <javac destdir="build/test" failonerror="${javacFailOnError}" verbose="${javacVerbose}" debug="${javacDebugInfo}" includeAntRuntime="no" bootclasspath="${bootclasspath}" source="${javacSource}" target="${javacTarget}">
@@ -142,6 +147,9 @@
             </sourcepath>
             <sourcepath>
                 <pathelement location="${basedir}/src/core" />
+            </sourcepath>
+            <sourcepath>
+                <pathelement location="${basedir}/src/tomcat" />
             </sourcepath>
             <classpath refid="classpath.dependencies" />
         </javadoc>

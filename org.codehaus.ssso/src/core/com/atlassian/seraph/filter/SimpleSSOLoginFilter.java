@@ -62,7 +62,7 @@ public class SimpleSSOLoginFilter implements Filter {
     public void doFilter(ServletRequest req, ServletResponse res,
             FilterChain chain) throws IOException, ServletException {
 
-        //log.debug("SimpleSSO.doFilter");
+        // log.debug("SimpleSSO.doFilter");
 
         if (!getSecurityConfig().getController().isSecurityEnabled()) {
             log
@@ -97,57 +97,51 @@ public class SimpleSSOLoginFilter implements Filter {
         // Check for a SimpleSSO principal
         ISimpleSSOPrincipal user = getUserPrincipal(request);
 
-        if (user != null) {
-
-            // We don't want to repeatedly call getUser if we already know it
-            // will
-            // fail
-            boolean principalLoginAlreadyFailed = false;
-            if (request.getSession().getAttribute("LOG_IN_FAILURE") != null) {
-                //log
-                //        .debug("SimpleSSO.doFilter skipping login because login has already failed for: "
-                //                + user.getUsername());
-                chain.doFilter(req, res);
-                return;
-            }
-
-            boolean loggedIn = false;
-            try {
-                // Save the principal to the session because we can't trust
-                // getUserPrincipal() to work -- Seraph LoginFilter messes with
-                // it.
-                request.setAttribute(ISimpleSSOPrincipal.class
-                        .getCanonicalName(), user);
-
-                loggedIn = getAuthenticator().login(request, response,
-                        user.getUsername(), "", false);
-                if (loggedIn) {
-                    log
-                            .debug("Login was successful - setting attribute to \"Success\"");
-                    // Announce to LoginFilter that it should deactivate
-                    request.setAttribute(OS_AUTHSTATUS_KEY, LOGIN_SUCCESS);
-                    req.setAttribute(ALREADY_FILTERED, Boolean.TRUE);
-                } else {
-                    log
-                            .debug("Login was not successful - setting attribute to \"Failed\"");
-                    // Keep quiet on failure
-                    // request.setAttribute(OS_AUTHSTATUS_KEY, LOGIN_FAILED);
-
-                    // We want to deactivate the filter for this session now.
-                    request.getSession().setAttribute("LOG_IN_FAILURE", user);
-
-                }
-            } catch (AuthenticatorException e) {
-                log
-                        .debug("Login was not successful, and exception was thrown - setting attribute to \"Error\"");
-                e.printStackTrace();
-                log.warn("Exception was thrown whilst logging in: "
-                        + e.getMessage(), e);
-            }
-
-        } else {
+        if (user == null) {
             log
-                    .debug("userPrincipal was null or was not of type ISimpleSSOPrincipal");
+                    .debug("SimpleSSO.doFilter deactivated because no SimpleSSOPrincipal is available from the Container");
+            chain.doFilter(req, res);
+            return;
+        }
+
+        // Disable if this principal has failed login before
+        if (request.getSession().getAttribute("LOG_IN_FAILURE") != null) {
+            chain.doFilter(req, res);
+            return;
+        }
+
+        boolean loggedIn = false;
+        try {
+            // Save the principal to the session because we can't trust
+            // getUserPrincipal() to work -- Seraph LoginFilter messes with
+            // it.
+            request.setAttribute(ISimpleSSOPrincipal.class.getCanonicalName(),
+                    user);
+
+            loggedIn = getAuthenticator().login(request, response,
+                    user.getUsername(), "password", false);
+            if (loggedIn) {
+                log
+                        .debug("Login was successful - setting attribute to \"Success\"");
+                // Announce to LoginFilter that it should deactivate
+                request.setAttribute(OS_AUTHSTATUS_KEY, LOGIN_SUCCESS);
+                req.setAttribute(ALREADY_FILTERED, Boolean.TRUE);
+            } else {
+                log
+                        .debug("Login was not successful - setting attribute to \"Failed\"");
+                // Keep quiet on failure
+                // request.setAttribute(OS_AUTHSTATUS_KEY, LOGIN_FAILED);
+
+                // We want to deactivate the filter for this session now.
+                request.getSession().setAttribute("LOG_IN_FAILURE", user);
+
+            }
+        } catch (AuthenticatorException e) {
+            log
+                    .debug("Login was not successful, and exception was thrown - setting attribute to \"Error\"");
+            e.printStackTrace();
+            log.warn("Exception was thrown whilst logging in: "
+                    + e.getMessage(), e);
         }
 
         chain.doFilter(req, res);
