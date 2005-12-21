@@ -87,8 +87,8 @@
 
         <delete dir="build" />
         <mkdir dir="build" />
-        <mkdir dir="build/src-common" />
         <mkdir dir="build/src-core" />
+        <mkdir dir="build/src-confluence" />
         <mkdir dir="build/src-tomcat" />
         <mkdir dir="build/test" />
 
@@ -102,11 +102,11 @@
         </delete>
 
         <antcall target="build.subproject">
-            <param name="subproject.name" value="common" />
+            <param name="subproject.name" value="core" />
         </antcall>
 
         <antcall target="build.subproject">
-            <param name="subproject.name" value="core" />
+            <param name="subproject.name" value="confluence" />
         </antcall>
 
         <antcall target="build.subproject">
@@ -143,10 +143,10 @@
         <!-- You must ensure the javadoc.exe is on your windows path -->
         <javadoc packagenames="*" destdir="${publishDir}/javadoc">
             <sourcepath>
-                <pathelement location="${basedir}/src/common" />
+                <pathelement location="${basedir}/src/core" />
             </sourcepath>
             <sourcepath>
-                <pathelement location="${basedir}/src/core" />
+                <pathelement location="${basedir}/src/confluence" />
             </sourcepath>
             <sourcepath>
                 <pathelement location="${basedir}/src/tomcat" />

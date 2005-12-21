@@ -31,7 +31,7 @@ import java.util.List;
 
 
 /**
- * Eventually we will extend this to handle Domino roles.
+ * Eventually we will extend this to handle roles.
  * 
  * TODO Add role support.
  * 

@@ -43,7 +43,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Extends RealmBase to support the use of the lptatoken to authenticate
+ * Extends RealmBase to return a SimpleSSO token pm authentication
  * 
  * @author drand
  * 
