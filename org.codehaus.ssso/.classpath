@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/core"/>
-	<classpathentry kind="src" path="src/confluence"/>
+	<classpathentry kind="src" path="src/atlassian"/>
 	<classpathentry kind="src" path="src/tomcat"/>
 	<classpathentry excluding="org/apache/catalina/" kind="src" path="src/tomcat50"/>
 	<classpathentry kind="src" path="test"/>
@@ -15,7 +15,7 @@
 	<classpathentry kind="lib" path="lib/servletapi-2.4.jar"/>
 	<classpathentry kind="lib" path="lib/seraph-0.7.12.jar"/>
 	<classpathentry kind="lib" path="lib/atlassian-user-0.4.9.jar"/>
-	<classpathentry kind="lib" path="lib/atlassian-bucket-2005.12.11.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.9.jar"/>
+	<classpathentry kind="lib" path="lib/atlassian-bucket-2005.12.11.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

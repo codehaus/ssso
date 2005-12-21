@@ -88,7 +88,7 @@
         <delete dir="build" />
         <mkdir dir="build" />
         <mkdir dir="build/src-core" />
-        <mkdir dir="build/src-confluence" />
+        <mkdir dir="build/src-atlassian" />
         <mkdir dir="build/src-tomcat" />
         <mkdir dir="build/test" />
 
@@ -106,7 +106,7 @@
         </antcall>
 
         <antcall target="build.subproject">
-            <param name="subproject.name" value="confluence" />
+            <param name="subproject.name" value="atlassian" />
         </antcall>
 
         <antcall target="build.subproject">
@@ -146,7 +146,7 @@
                 <pathelement location="${basedir}/src/core" />
             </sourcepath>
             <sourcepath>
-                <pathelement location="${basedir}/src/confluence" />
+                <pathelement location="${basedir}/src/atlassian" />
             </sourcepath>
             <sourcepath>
                 <pathelement location="${basedir}/src/tomcat" />
