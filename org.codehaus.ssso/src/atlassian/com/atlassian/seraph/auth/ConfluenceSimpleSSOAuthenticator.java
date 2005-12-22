@@ -130,19 +130,25 @@ public class ConfluenceSimpleSSOAuthenticator extends DefaultAuthenticator {
                 user = userManager.getUser(principal.getUsername()
                         .toLowerCase());
 
-                GroupManager groupManager = (GroupManager) ContainerManager
-                        .getComponent("groupManager");
+                if (user != null) {
+                    GroupManager groupManager = (GroupManager) ContainerManager
+                            .getComponent("groupManager");
 
-                Group group = groupManager.getGroup("confluence-users");
-                if (!groupManager.hasMembership(group, user)) {
-                    log.debug("Adding user to confluence-users: "
-                            + user.getName());
-                    groupManager.addMembership(group, user);
+                    Group group = groupManager.getGroup("confluence-users");
+                    if (!groupManager.hasMembership(group, user)) {
+                        log.debug("Adding user to confluence-users: "
+                                + user.getName());
+                        groupManager.addMembership(group, user);
+                    }
+
+                    // TODO. We should compare email addresses to be sure we
+                    // have
+                    // mapped to the right person. Or store the password in the
+                    // principal??
+
                 }
-
-                // TODO. We should compare email addresses to be sure we have
-                // mapped to the right person. Or store the password in the
-                // principal??
+                else
+                    return false;
 
             } catch (EntityException e) {
                 log.debug("getUser threw an exception: ", e);
@@ -164,6 +170,7 @@ public class ConfluenceSimpleSSOAuthenticator extends DefaultAuthenticator {
 
         } else {
             // TODO. This doesn't work for some reason. Why not?
+            // We need to take a look at the code in ConfluenceAuthenticator.java 
             log.debug("Attempting standard confluence login");
             return super.login(request, response, username, password, cookie);
         }
